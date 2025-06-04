@@ -1,0 +1,433 @@
+<!-- english_level_site/index.html -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>English Level Tester</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background: #f4f7ff;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      height: 100vh;
+      align-items: center;
+      justify-content: center;
+    }
+    #app {
+      background: #ffffff;
+      width: 90%;
+      max-width: 600px;
+      border-radius: 16px;
+      padding: 2rem 2.5rem;
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.15);
+    }
+    h1, h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+    button {
+  padding: 0.6rem 1.4rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+/* 메뉴용 버튼을 가운데 정렬 */
+#startBtn,
+#wordBtn,
+#sentenceBtn,
+#menuBtn,
+#restartBtn {
+  display: block;
+  margin: 1rem auto 0 auto;
+}
+
+/* 보기(선택지) 버튼은 왼쪽 정렬 */
+button.choiceBtn {
+  display: inline-block;
+  margin-top: 1rem;
+  background: #e5e7eb;
+  color: #111827;
+}
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .hidden { display:none; }
+    .result { font-weight: bold; margin-top: 1rem; text-align:center; }
+    .underline { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <h1>영어 단어 레벨 진단</h1>
+    <div id="content"></div>
+  </div>
+
+  <script>
+    /*********************************
+     * 데이터 정의                   *
+     *********************************/
+    const words = {
+      beginner: [
+        { word: 'apple', meaning: '사과' },
+        { word: 'book', meaning: '책' },
+        { word: 'cat', meaning: '고양이' },
+        { word: 'dog', meaning: '개' },
+        { word: 'eat', meaning: '먹다' },
+        { word: 'friend', meaning: '친구' },
+        { word: 'good', meaning: '좋은' },
+        { word: 'happy', meaning: '행복한' },
+        { word: 'ice', meaning: '얼음' },
+        { word: 'jump', meaning: '점프하다' },
+        { word: 'kite', meaning: '연' },
+        { word: 'love', meaning: '사랑' },
+        { word: 'milk', meaning: '우유' },
+        { word: 'nice', meaning: '멋진' },
+        { word: 'open', meaning: '열다' },
+        { word: 'pen', meaning: '펜' },
+        { word: 'run', meaning: '달리다' },
+        { word: 'sun', meaning: '태양' },
+        { word: 'tree', meaning: '나무' },
+        { word: 'walk', meaning: '걷다' }
+      ],
+      intermediate: [
+        { word: 'achieve', meaning: '성취하다' },
+        { word: 'belief', meaning: '믿음' },
+        { word: 'comfort', meaning: '편안함' },
+        { word: 'develop', meaning: '발전시키다' },
+        { word: 'eager', meaning: '열망하는' },
+        { word: 'famous', meaning: '유명한' },
+        { word: 'generous', meaning: '관대한' },
+        { word: 'harvest', meaning: '수확' },
+        { word: 'inspire', meaning: '영감을 주다' },
+        { word: 'justice', meaning: '정의' },
+        { word: 'kingdom', meaning: '왕국' },
+        { word: 'language', meaning: '언어' },
+        { word: 'manage', meaning: '관리하다' },
+        { word: 'neglect', meaning: '무시하다' },
+        { word: 'observe', meaning: '관찰하다' },
+        { word: 'patient', meaning: '참을성 있는' },
+        { word: 'quality', meaning: '품질' },
+        { word: 'respect', meaning: '존중' },
+        { word: 'sincere', meaning: '성실한' },
+        { word: 'talent', meaning: '재능' }
+      ],
+      advanced: [
+        { word: 'abate', meaning: '줄이다' },
+        { word: 'cacophony', meaning: '불협화음' },
+        { word: 'deleterious', meaning: '해로운' },
+        { word: 'enigma', meaning: '수수께끼' },
+        { word: 'facetious', meaning: '경박한' },
+        { word: 'gregarious', meaning: '사교적인' },
+        { word: 'harbinger', meaning: '전조' },
+        { word: 'idiosyncrasy', meaning: '특이성' },
+        { word: 'juxtapose', meaning: '병치하다' },
+        { word: 'kudos', meaning: '영광' },
+        { word: 'labyrinth', meaning: '미로' },
+        { word: 'magnanimous', meaning: '도량이 넓은' },
+        { word: 'nebulous', meaning: '희미한' },
+        { word: 'obsequious', meaning: '아부하는' },
+        { word: 'paradigm', meaning: '모범' },
+        { word: 'quixotic', meaning: '비현실적인' },
+        { word: 'recalcitrant', meaning: '반항하는' },
+        { word: 'sagacious', meaning: '현명한' },
+        { word: 'tenacious', meaning: '집요한' },
+        { word: 'ubiquitous', meaning: '어디에나 있는' }
+      ]
+    };
+
+    // 문장 예제 (sentence, answer, choices[answer 포함])
+    const sentences = {
+      beginner: [
+        { sentence: 'I <u>like</u> to eat apples.', answer: 'love', choices: ['love','hate','ignore','forget'] },
+        { sentence: 'She is very <u>happy</u> today.', answer: 'glad', choices: ['glad','sad','angry','tired'] },
+        { sentence: 'He will <u>run</u> fast.', answer: 'dash', choices: ['dash','sit','crawl','jump'] },
+        { sentence: 'The sun is <u>bright</u>.', answer: 'shiny', choices: ['shiny','dark','cold','dull'] },
+        { sentence: 'This book is <u>good</u>.', answer: 'nice', choices: ['nice','bad','boring','strange'] },
+        { sentence: 'Let\'s <u>open</u> the door.', answer: 'unclose', choices: ['unclose','lock','kick','paint'] },
+        { sentence: 'Please <u>walk</u> slowly.', answer: 'stroll', choices: ['stroll','run','drive','fly'] },
+        { sentence: 'We <u>love</u> our teacher.', answer: 'adore', choices: ['adore','dislike','avoid','betray'] },
+        { sentence: 'He drinks <u>milk</u> every day.', answer: 'dairy', choices: ['dairy','juice','water','coffee'] },
+        { sentence: 'The cat likes to <u>jump</u>.', answer: 'leap', choices: ['leap','sleep','crawl','hide'] },
+        // 10 more
+        { sentence: 'A <u>friend</u> helps you.', answer: 'pal', choices: ['pal','enemy','stranger','boss'] },
+        { sentence: 'She flies a <u>kite</u>.', answer: 'glider', choices: ['glider','ball','plane','bottle'] },
+        { sentence: 'The <u>tree</u> is tall.', answer: 'plant', choices: ['plant','rock','river','cloud'] },
+        { sentence: 'Ice is very <u>cold</u>.', answer: 'chilly', choices: ['chilly','warm','hot','dry'] },
+        { sentence: 'He eats an <u>apple</u>.', answer: 'fruit', choices: ['fruit','vegetable','meat','grain'] },
+        { sentence: 'It\'s a <u>sunny</u> day.', answer: 'bright', choices: ['bright','rainy','snowy','windy'] },
+        { sentence: 'She writes with a <u>pen</u>.', answer: 'ink', choices: ['ink','pencil','brush','crayon'] },
+        { sentence: 'The dog likes to <u>eat</u>.', answer: 'consume', choices: ['consume','sleep','bark','swim'] },
+        { sentence: 'He is a <u>good</u> boy.', answer: 'kind', choices: ['kind','rude','wild','lazy'] },
+        { sentence: 'She is <u>nice</u> to everyone.', answer: 'kind', choices: ['kind','mean','harsh','loud'] }
+      ],
+      intermediate: [
+        { sentence: 'She tried to <u>achieve</u> her goal.', answer: 'accomplish', choices: ['accomplish','ignore','delay','oppose'] },
+        { sentence: 'His <u>belief</u> in justice is firm.', answer: 'faith', choices: ['faith','doubt','fear','guess'] },
+        { sentence: 'A soft bed gives great <u>comfort</u>.', answer: 'ease', choices: ['ease','pain','trouble','shock'] },
+        { sentence: 'They plan to <u>develop</u> the software.', answer: 'build', choices: ['build','destroy','hate','stop'] },
+        { sentence: 'She is <u>eager</u> to learn.', answer: 'keen', choices: ['keen','lazy','slow','weak'] },
+        { sentence: 'He is a <u>famous</u> singer.', answer: 'renowned', choices: ['renowned','unknown','ordinary','quiet'] },
+        { sentence: 'The <u>harvest</u> was abundant.', answer: 'crop', choices: ['crop','storm','famine','desert'] },
+        { sentence: 'She wants to <u>inspire</u> others.', answer: 'motivate', choices: ['motivate','discourage','confuse','anger'] },
+        { sentence: 'We seek <u>justice</u>.', answer: 'fairness', choices: ['fairness','crime','favor','pity'] },
+        { sentence: 'He tried to <u>manage</u> the team well.', answer: 'control', choices: ['control','ignore','damage','free'] },
+        // 10 more
+        { sentence: 'Do not <u>neglect</u> your health.', answer: 'ignore', choices: ['ignore','care','fix','value'] },
+        { sentence: 'She will <u>observe</u> the stars.', answer: 'watch', choices: ['watch','touch','eat','move'] },
+        { sentence: 'Please be <u>patient</u>.', answer: 'calm', choices: ['calm','angry','quick','proud'] },
+        { sentence: 'This has high <u>quality</u>.', answer: 'standard', choices: ['standard','abuse','loss','joke'] },
+        { sentence: 'Show <u>respect</u> to elders.', answer: 'honor', choices: ['honor','shame','insult','jail'] },
+        { sentence: 'He gave a <u>sincere</u> apology.', answer: 'genuine', choices: ['genuine','fake','light','empty'] },
+        { sentence: 'She has great <u>talent</u>.', answer: 'skill', choices: ['skill','doubt','lack','debt'] },
+        { sentence: 'The <u>kingdom</u> grew strong.', answer: 'realm', choices: ['realm','enemy','jungle','office'] },
+        { sentence: 'Generous people often <u>donate</u>.', answer: 'give', choices: ['give','take','steal','hide'] },
+        { sentence: 'This <u>language</u> is hard.', answer: 'tongue', choices: ['tongue','math','culture','job'] }
+      ],
+      advanced: [
+        { sentence: 'The storm finally began to <u>abate</u>.', answer: 'lessen', choices: ['lessen','grow','start','rage'] },
+        { sentence: 'The city was a <u>cacophony</u> of sounds.', answer: 'din', choices: ['din','silence','music','echo'] },
+        { sentence: 'Smoking has a <u>deleterious</u> effect.', answer: 'harmful', choices: ['harmful','helpful','minor','rare'] },
+        { sentence: 'Her reply was an <u>enigma</u>.', answer: 'mystery', choices: ['mystery','fact','answer','proof'] },
+        { sentence: 'He made a <u>facetious</u> comment.', answer: 'joking', choices: ['joking','serious','kind','brutal'] },
+        { sentence: 'She is a <u>gregarious</u> person.', answer: 'sociable', choices: ['sociable','shy','mean','silent'] },
+        { sentence: 'Birds are a <u>harbinger</u> of spring.', answer: 'forerunner', choices: ['forerunner','ending','cause','warning'] },
+        { sentence: 'His habit was an <u>idiosyncrasy</u>.', answer: 'peculiarity', choices: ['peculiarity','virtue','flaw','copy'] },
+        { sentence: 'Let\'s <u>juxtapose</u> these ideas.', answer: 'place side by side', choices: ['place side by side','hide','remove','blend'] },
+        { sentence: 'She earned much <u>kudos</u>.', answer: 'praise', choices: ['praise','money','power','criticism'] },
+        // 10 more
+        { sentence: 'The cave was a <u>labyrinth</u>.', answer: 'maze', choices: ['maze','tunnel','hole','road'] },
+        { sentence: 'He is <u>magnanimous</u> in victory.', answer: 'generous', choices: ['generous','petty','stern','quick'] },
+        { sentence: 'Her memory was <u>nebulous</u>.', answer: 'vague', choices: ['vague','clear','sharp','deep'] },
+        { sentence: 'An <u>obsequious</u> servant.', answer: 'submissive', choices: ['submissive','proud','lazy','smart'] },
+        { sentence: 'This is the <u>paradigm</u> for success.', answer: 'model', choices: ['model','joke','flaw','secret'] },
+        { sentence: 'A <u>quixotic</u> quest.', answer: 'idealistic', choices: ['idealistic','practical','easy','quick'] },
+        { sentence: 'A <u>recalcitrant</u> child.', answer: 'defiant', choices: ['defiant','kind','calm','timid'] },
+        { sentence: 'He gave <u>sagacious</u> advice.', answer: 'wise', choices: ['wise','silly','short','weak'] },
+        { sentence: 'Her <u>tenacious</u> grip.', answer: 'persistent', choices: ['persistent','loose','soft','light'] },
+        { sentence: 'Smartphones are <u>ubiquitous</u>.', answer: 'everywhere', choices: ['everywhere','rare','useless','fragile'] }
+      ]
+    };
+
+    /*********************************
+     * 상태 관리 변수                *
+     *********************************/
+    let state = {
+      step: 'intro',   // intro, diagnostic, menu, word, sentence, finish
+      diagIndex: 0,
+      diagScore: 0,
+      level: null,
+      questions: [],   // current quiz questions
+      quizIndex: 0,
+      quizScore: 0,
+      mode: null       // 'word' or 'sentence'
+    };
+
+    const contentEl = document.getElementById('content');
+
+    /*********************************
+     * 유틸 함수                      *
+     *********************************/
+    function shuffle(array) {
+      return array.map(v => ({ v, sort: Math.random() })).sort((a, b) => a.sort - b.sort).map(({ v }) => v);
+    }
+
+    function pickRandom(arr, n) {
+      return shuffle(arr).slice(0, n);
+    }
+
+    function render() {
+      switch (state.step) {
+        case 'intro':
+          renderIntro();
+          break;
+        case 'diagnostic':
+          renderDiagnostic();
+          break;
+        case 'menu':
+          renderMenu();
+          break;
+        case 'word':
+        case 'sentence':
+          renderQuiz();
+          break;
+        case 'finish':
+          renderFinish();
+          break;
+      }
+    }
+
+    /*********************************
+     * 화면 그리기                   *
+     *********************************/
+    function renderIntro() {
+      contentEl.innerHTML = `
+        <h2>10개의 단어 퀴즈로 레벨을 확인해보세요!</h2>
+        <button id="startBtn">진단 시작</button>
+      `;
+      document.getElementById('startBtn').onclick = startDiagnostic;
+    }
+
+    function startDiagnostic() {
+      // 진단용으로 각 레벨에서 고르게 추출
+      const diagWords = [
+        ...pickRandom(words.beginner, 4),
+        ...pickRandom(words.intermediate, 3),
+        ...pickRandom(words.advanced, 3)
+      ];
+      state.diagIndex = 0;
+      state.diagScore = 0;
+      state.diagQuestions = shuffle(diagWords);
+      state.step = 'diagnostic';
+      render();
+    }
+
+    function renderDiagnostic() {
+      const q = state.diagQuestions[state.diagIndex];
+      // 보기 만들기 (정답 포함하여 총 4개)
+      const otherMeanings = Object.values(words)
+  .flat()
+  .filter(w => w.meaning !== q.meaning)
+  .map(w => w.meaning);
+
+const choices = shuffle([
+  q.meaning,
+  ...pickRandom(otherMeanings, 3)
+]);
+      contentEl.innerHTML = `
+        <h2>진단 퀴즈 (${state.diagIndex + 1} / 10)</h2>
+        <p><strong>${q.word}</strong> 의 뜻을 고르세요.</p>
+        <div class="choices">
+          ${choices.map(c => `<button class="secondary choiceBtn">${c}</button>`).join('')}
+        </div>
+        <p class="result" id="diagResult"></p>
+      `;
+      document.querySelectorAll('.choiceBtn').forEach(btn => {
+        btn.onclick = () => {
+          if (btn.textContent === q.meaning) {
+            state.diagScore += 1;
+            document.getElementById('diagResult').textContent = '정답!';
+          } else {
+            document.getElementById('diagResult').textContent = `오답! (정답: ${q.meaning})`;
+          }
+          setTimeout(() => {
+            state.diagIndex += 1;
+            if (state.diagIndex >= 10) {
+              // 레벨 결정
+              if (state.diagScore <= 3) state.level = 'beginner';
+              else if (state.diagScore <= 7) state.level = 'intermediate';
+              else state.level = 'advanced';
+              state.step = 'menu';
+            }
+            render();
+          }, 800);
+        }
+      });
+    }
+
+    function renderMenu() {
+      const levelKo = { beginner: '초보', intermediate: '중수', advanced: '고수' }[state.level];
+      contentEl.innerHTML = `
+        <h2>당신의 레벨은 <span style="color:#4f46e5">${levelKo}</span> 입니다!</h2>
+        <p>어떤 학습을 진행할까요?</p>
+        <button id="wordBtn">단어 파트</button>
+        <button id="sentenceBtn">예문 파트</button>
+        <button class="secondary" id="restartBtn">다시 진단하기</button>
+      `;
+      document.getElementById('wordBtn').onclick = () => startQuiz('word');
+      document.getElementById('sentenceBtn').onclick = () => startQuiz('sentence');
+      document.getElementById('restartBtn').onclick = () => {
+        state.step = 'intro';
+        render();
+      };
+    }
+
+    function startQuiz(mode) {
+      state.mode = mode;
+      state.quizScore = 0;
+      state.quizIndex = 0;
+      if (mode === 'word') {
+        state.questions = shuffle(words[state.level]).slice(0, 10);
+      } else {
+        state.questions = shuffle(sentences[state.level]).slice(0, 10);
+      }
+      state.step = mode;
+      render();
+    }
+
+    function renderQuiz() {
+      const q = state.questions[state.quizIndex];
+      if (state.mode === 'word') {
+        // 보기: 정답 의미 + 3 랜덤 오답 의미
+        const otherMeanings = Object.values(words).flat().filter(w => w.word !== q.word).map(w => w.meaning);
+        const choices = shuffle([q.meaning, ...pickRandom(otherMeanings, 3)]);
+        contentEl.innerHTML = `
+          <h2>단어 파트 (${state.quizIndex + 1} / 10)</h2>
+          <p><strong>${q.word}</strong> 의 뜻을 고르세요.</p>
+          <div class="choices">
+            ${choices.map(c => `<button class="secondary choiceBtn">${c}</button>`).join('')}
+          </div>
+          <p class="result" id="quizResult"></p>
+        `;
+        document.querySelectorAll('.choiceBtn').forEach(btn => {
+          btn.onclick = () => handleAnswer(btn.textContent === q.meaning, `정답: ${q.meaning}`);
+        });
+      } else {
+        const choices = shuffle(q.choices);
+        contentEl.innerHTML = `
+          <h2>예문 파트 (${state.quizIndex + 1} / 10)</h2>
+          <p>${q.sentence}</p>
+          <p>밑줄 친 단어와 의미가 가장 유사한 단어를 고르세요.</p>
+          <div class="choices">
+            ${choices.map(c => `<button class="secondary choiceBtn">${c}</button>`).join('')}
+          </div>
+          <p class="result" id="quizResult"></p>
+        `;
+        document.querySelectorAll('.choiceBtn').forEach(btn => {
+          btn.onclick = () => handleAnswer(btn.textContent === q.answer, `정답: ${q.answer}`);
+        });
+      }
+    }
+
+    function handleAnswer(correct, msg) {
+      const resEl = document.getElementById('quizResult');
+      if (correct) {
+        state.quizScore += 1;
+        resEl.textContent = '정답!';
+      } else {
+        resEl.textContent = `오답! (${msg})`;
+      }
+      setTimeout(() => {
+        state.quizIndex += 1;
+        if (state.quizIndex >= 10) {
+          state.step = 'finish';
+        }
+        render();
+      }, 800);
+    }
+
+    function renderFinish() {
+      const partKo = state.mode === 'word' ? '단어' : '예문';
+      contentEl.innerHTML = `
+        <h2>${partKo} 파트 완료!</h2>
+        <p>점수: ${state.quizScore} / 10</p>
+        <button id="menuBtn">메뉴로 돌아가기</button>
+        <button class="secondary" id="restartBtn">다시 진단하기</button>
+      `;
+      document.getElementById('menuBtn').onclick = () => { state.step = 'menu'; render(); };
+      document.getElementById('restartBtn').onclick = () => { state.step = 'intro'; render(); };
+    }
+
+    // 초기 렌더링
+    render();
+  </script>
+</body>
+</html>
